@@ -69,14 +69,40 @@ float Q1_routine_1(float * restrict a, float * restrict b, int size) {
 
 // in the following, size can have any positive value
 float Q1_vectorized_1(float * restrict a, float * restrict b, int size) {
+  printf("\ntesting routine 1 with size %d: ",size);
   float product_a = 1.0;
   float product_b = 1.0;
+  __m128 a4, b4;
+  __m128 a_temp = _mm_loadu_ps(&a[0]);
+  __m128 b_temp = _mm_loadu_ps(&b[0]);
+  // vecorised multiplication
+  int i;
+  for ( i = 4; i < size; i = i+4 ) {
+    a4 = _mm_loadu_ps(&a[i]);
+    b4 = _mm_loadu_ps(&b[i]);
+    a_temp = _mm_mul_ps(a_temp,a4);
+    b_temp = _mm_mul_ps(b_temp,b4);
   
-  for ( int i = 0; i < size; i++ ) {
-    product_a = product_a * a[i];
-    product_b = product_b * b[i];
   }
-  return product_a + product_b;
+  float a_total[4] =  {0,0,0,0};
+  float b_total[4] =  {0,0,0,0};
+  _mm_store_ps(a_total,a_temp);
+  _mm_store_ps(b_total,b_temp);
+
+  // get multiplicitave sum of the arrays
+  for(int m = 0;m<=4;m++){
+    product_a = product_a * a_total[m];
+    product_b = product_b * b_total[m];
+  }
+
+  // calculate the product for any extra 
+
+  for(int k = i; k < size;k++){
+    product_a = product_a *a[k];
+    product_b = product_b *b[k];
+  }
+
+   return product_a + product_b;
 }
 
 
@@ -91,9 +117,24 @@ void Q1_routine_2(float * restrict a, float * restrict b, int size) {
 
 // in the following, size can have any positive value
 void Q1_vectorized_2(float * restrict a, float * restrict b, int size) {
-  for ( int i = 0; i < size; i++ ) {
+  printf("testing routine_2 with size %d: ",size);
+  __m128 a4, b4; // declare a and b vectors
+  __m128 pi = _mm_set1_ps(3.14159); // set vector with all vals as pi
+  __m128 seventeen = _mm_set1_ps(17.2);
+  int i;
+
+  for ( i = 0; i < size-3; i = i+4 ) {
+    a4 = _mm_loadu_ps(&a[i]);
+    b4 = _mm_loadu_ps(&b[i]);
+    __m128 recip4 = _mm_div_ps(pi,b4);
+    __m128 mul = _mm_mul_ps(a4,seventeen);
+    __m128 tmp = _mm_add_ps(mul,recip4);
+    _mm_storeu_ps(&a[i],tmp);
+  }
+  for(i=i;i<size;i++){
     a[i] = (a[i] * 17.2) + (3.14159/b[i]);
   }
+  
 }
 
 
